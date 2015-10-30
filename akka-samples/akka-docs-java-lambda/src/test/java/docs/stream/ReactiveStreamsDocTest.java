@@ -197,7 +197,7 @@ public class ReactiveStreamsDocTest {
         final Publisher<Author> authorPublisher =
           Source.from(rs.tweets())
             .via(authors)
-            .runWith(Sink.fanoutPublisher(8, 16), mat);
+            .runWith(Sink.publisher(Int.MaxValue, 16), mat);
         
         authorPublisher.subscribe(rs.storage());
         authorPublisher.subscribe(rs.alert());

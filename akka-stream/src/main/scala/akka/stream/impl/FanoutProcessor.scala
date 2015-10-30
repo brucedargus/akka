@@ -7,7 +7,11 @@ import org.reactivestreams.Subscriber
 /**
  * INTERNAL API
  */
-private[akka] abstract class FanoutOutputs(val maxBufferSize: Int, val initialBufferSize: Int, self: ActorRef, val pump: Pump)
+private[akka] abstract class FanoutOutputs(val maxNumberOfSubscribers: Int,
+                                           val maxBufferSize: Int,
+                                           val initialBufferSize: Int,
+                                           self: ActorRef,
+                                           val pump: Pump)
   extends DefaultOutputTransferStates
   with SubscriberManagement[Any] {
 
@@ -93,11 +97,12 @@ private[akka] abstract class FanoutOutputs(val maxBufferSize: Int, val initialBu
  */
 private[akka] class FanoutProcessorImpl(
   _settings: ActorMaterializerSettings,
+  maxNumberOfSubscribers: Int,
   initialFanoutBufferSize: Int,
   maximumFanoutBufferSize: Int) extends ActorProcessorImpl(_settings) {
 
   override val primaryOutputs: FanoutOutputs =
-    new FanoutOutputs(maximumFanoutBufferSize, initialFanoutBufferSize, self, this) {
+    new FanoutOutputs(maxNumberOfSubscribers, maximumFanoutBufferSize, initialFanoutBufferSize, self, this) {
       override def afterShutdown(): Unit = afterFlush()
     }
 
