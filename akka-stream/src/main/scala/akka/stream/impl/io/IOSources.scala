@@ -6,6 +6,7 @@ package akka.stream.impl.io
 import java.io.{ File, InputStream }
 
 import akka.stream._
+import akka.stream.ActorAttributes.Dispatcher
 import akka.stream.impl.StreamLayout.Module
 import akka.stream.impl.{ ErrorPublisher, SourceModule }
 import akka.util.ByteString
@@ -20,13 +21,13 @@ import scala.concurrent.{ Future, Promise }
 private[akka] final class SynchronousFileSource(f: File, chunkSize: Int, val attributes: Attributes, shape: SourceShape[ByteString])
   extends SourceModule[ByteString, Future[Long]](shape) {
   override def create(context: MaterializationContext) = {
-    // FIXME rewrite to be based on AsyncStage rather than dangerous downcasts
+    // FIXME rewrite to be based on GraphStage rather than dangerous downcasts
     val mat = ActorMaterializer.downcast(context.materializer)
     val settings = mat.effectiveSettings(context.effectiveAttributes)
 
     val bytesReadPromise = Promise[Long]()
     val props = SynchronousFilePublisher.props(f, bytesReadPromise, chunkSize, settings.initialInputBufferSize, settings.maxInputBufferSize)
-    val dispatcher = IOSettings.fileIoDispatcher(context)
+    val dispatcher = context.effectiveAttributes.get[Dispatcher](IOSettings.IODispatcher).dispatcher
 
     val ref = mat.actorOf(context, props.withDispatcher(dispatcher))
 
